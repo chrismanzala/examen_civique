@@ -102,19 +102,23 @@
 
   /* ---- panneau latéral : examen blanc ---- */
   #panneau-examen{display:flex;flex-direction:column;gap:18px}
+  #panneau-examen[hidden]{display:none}
   .palette{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 10px}
   .palette button{
     aspect-ratio:1;border:1px solid var(--trait);background:var(--carte);border-radius:6px;
     font-size:12px;color:var(--gris);font-variant-numeric:tabular-nums;padding:0;
     transition:background .15s ease,border-color .15s ease;
   }
-  .palette button:hover{border-color:var(--or)}
-  .palette button.repondu{background:var(--or-pale);color:var(--or);border-color:#DECA98;font-weight:600}
-  .palette button.courante{border-color:var(--or);border-width:2px;color:var(--encre)}
+  .palette button:hover:not(:disabled){border-color:var(--or)}
+  .palette button:disabled{cursor:default;opacity:.45}
+  .palette button.juste{background:var(--vert-pale);color:var(--vert);border-color:#A9D3BC;font-weight:600;opacity:1}
+  .palette button.faux{background:var(--rouge-pale);color:var(--rouge);border-color:#E2C2BF;font-weight:600;opacity:1}
+  .palette button.courante{border-color:var(--or);border-width:2px;color:var(--encre);opacity:1}
   .legende{display:flex;gap:14px;padding:0 10px;font-size:12px;color:var(--gris)}
   .legende span{display:inline-flex;align-items:center;gap:5px}
   .legende i{width:9px;height:9px;border-radius:3px;display:inline-block;border:1px solid var(--trait)}
-  .legende i.rep{background:var(--or-pale);border-color:#DECA98}
+  .legende i.juste{background:var(--vert-pale);border-color:#A9D3BC}
+  .legende i.faux{background:var(--rouge-pale);border-color:#E2C2BF}
   .quitter{margin:0 10px}
 
   /* ---- fiche ---- */
@@ -159,6 +163,8 @@
   .btn:active{transform:translateY(1px)}
   .btn.principal{background:var(--encre);border-color:var(--encre);color:#fff;flex:1;min-width:190px}
   .btn.principal:hover{background:#20304F}
+  .btn.principal:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .btn.principal:disabled:hover{background:var(--encre)}
   .btn.su{color:var(--bleu);border-color:#B9CCE9;flex:1}
   .btn.su:hover{background:var(--bleu-pale)}
   .btn.revoir{color:var(--rouge);border-color:#E2C2BF;flex:1}
@@ -298,8 +304,8 @@
       <div class="bloc-titre">Questions</div>
       <div class="palette" id="palette"></div>
       <div class="legende">
-        <span><i class="rep"></i> Répondue</span>
-        <span><i></i> En attente</span>
+        <span><i class="juste"></i> Bonne réponse</span>
+        <span><i class="faux"></i> Mauvaise réponse</span>
       </div>
       <button class="lien quitter" id="quitter-examen">Quitter l'examen blanc</button>
     </div>
@@ -1555,6 +1561,7 @@ function aller(d){
     if(!examen || examen.items.length === 0 || examen.termine) return;
     const np = pos + d;
     if(np < 0 || np >= examen.items.length) return;
+    if(d > 0 && examen.items[pos].choix === null) return;
     pos = np;
     dessiner();
     return;
@@ -1631,7 +1638,7 @@ function dessinerExamen(){
   $("minuteur").classList.toggle("alerte", examen.restant <= 60);
   $("aide").innerHTML = '<kbd>1</kbd>–<kbd>4</kbd> répondre · <kbd>←</kbd><kbd>→</kbd> naviguer';
   $("prec").disabled = pos === 0;
-  $("suiv").disabled = pos === examen.items.length - 1;
+  $("suiv").disabled = pos === examen.items.length - 1 || it.choix === null;
 
   fiche.innerHTML =
     '<div class="num"><span>Question '+(pos+1)+' / '+examen.items.length+'</span></div>'+
@@ -1643,21 +1650,18 @@ function dessinerExamen(){
     const b = document.createElement("button");
     b.className = "prop" + (it.choix === i ? " choisi" : "");
     b.innerHTML = '<span class="lettre">'+"ABCD"[i]+'</span><span>'+o.t+'</span>';
-    b.onclick = ()=>{ it.choix = i; dessiner(); };
+    if(it.choix === null) b.onclick = ()=>{ it.choix = i; dessiner(); };
+    else b.disabled = true;
     liste.appendChild(b);
   });
   fiche.appendChild(liste);
 
   actions.innerHTML = "";
-  if(pos < examen.items.length - 1){
-    actions.appendChild(bouton("Question suivante","btn principal",()=>aller(1)));
-  }else{
-    actions.appendChild(bouton("Terminer l'examen","btn principal",()=>{
-      const restantes = examen.items.length - repondues;
-      if(restantes > 0 && !confirm(restantes+" question(s) sans réponse compteront comme fausses. Terminer l'examen ?")) return;
-      terminerExamen();
-    }));
-  }
+  const derniere = pos === examen.items.length - 1;
+  const suivant = bouton(derniere ? "Terminer l'examen" : "Question suivante","btn principal",
+    ()=> derniere ? terminerExamen() : aller(1));
+  suivant.disabled = it.choix === null;
+  actions.appendChild(suivant);
   dessinerPaletteExamen();
 }
 function dessinerPaletteExamen(){
@@ -1665,14 +1669,15 @@ function dessinerPaletteExamen(){
   if(!hote) return;
   hote.innerHTML = "";
   if(!examen) return;
+  const atteinte = examen.items.findIndex(x => x.choix === null);
   examen.items.forEach((it,i)=>{
     const b = document.createElement("button");
     b.textContent = i+1;
     let cls = "";
-    if(it.choix !== null) cls += "repondu ";
+    if(it.choix !== null) cls += it.options[it.choix].juste ? "juste " : "faux ";
     if(i === pos && !examen.termine) cls += "courante";
     b.className = cls.trim();
-    b.disabled = examen.termine;
+    b.disabled = examen.termine || (atteinte !== -1 && i > atteinte);
     b.setAttribute("aria-label","Aller à la question "+(i+1));
     b.onclick = ()=>{ pos = i; dessiner(); };
     hote.appendChild(b);
@@ -1776,7 +1781,7 @@ document.addEventListener("keydown", ev=>{
     return;
   }
   if(mode === "examen"){
-    if(examen && !examen.termine && "1234".includes(ev.key)){
+    if(examen && !examen.termine && "1234".includes(ev.key) && examen.items[pos].choix === null){
       examen.items[pos].choix = Number(ev.key)-1;
       dessiner();
     }
