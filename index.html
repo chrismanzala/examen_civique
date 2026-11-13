@@ -7,14 +7,20 @@
 <style>
   :root{
     --encre:#131C33;
-    --papier:#EDEFF3;
+    --papier:#EEF0F4;
     --carte:#FFFFFF;
     --bleu:#1F4E9C;
     --bleu-pale:#E4EBF7;
     --rouge:#9E2B25;
     --rouge-pale:#F6E7E5;
+    --or:#8A6416;
+    --or-pale:#F2E8D3;
+    --vert:#1F6E4A;
+    --vert-pale:#E3F1E9;
     --gris:#69718A;
-    --trait:#D3D8E2;
+    --trait:#D8DCE5;
+    --r:10px;
+    --ombre:0 1px 2px rgba(19,28,51,.04), 0 12px 30px -14px rgba(19,28,51,.16);
     --serif:"Spectral",Georgia,"Times New Roman",serif;
     --sans:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
   }
@@ -35,15 +41,21 @@
     border-bottom:1px solid var(--trait);
     background:var(--carte);
     position:sticky;top:0;z-index:20;
+    box-shadow:0 2px 14px rgba(19,28,51,.035);
   }
   .bandeau{
     max-width:1080px;margin:0 auto;padding:14px 22px;
     display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
   }
-  .titre{font-family:var(--serif);font-weight:600;font-size:19px;letter-spacing:.1px}
+  .titre{font-family:var(--serif);font-weight:600;font-size:20px;letter-spacing:.1px;display:flex;align-items:baseline;gap:8px}
+  .titre .liseré{display:inline-flex;gap:3px}
+  .titre .liseré span{width:7px;height:7px;border-radius:50%;display:block}
+  .titre .liseré span:nth-child(1){background:var(--bleu)}
+  .titre .liseré span:nth-child(2){background:#fff;border:1px solid var(--trait)}
+  .titre .liseré span:nth-child(3){background:var(--rouge)}
   .sous{font-size:13px;color:var(--gris)}
-  .jauge{height:3px;background:var(--trait)}
-  .jauge span{display:block;height:100%;background:var(--bleu);width:0;transition:width .35s ease}
+  .jauge{height:4px;background:var(--trait);border-radius:2px;overflow:hidden}
+  .jauge span{display:block;height:100%;background:var(--bleu);width:0;border-radius:2px;transition:width .35s ease}
 
   /* ---- grille ---- */
   .grille{
@@ -58,7 +70,7 @@
     display:flex;justify-content:space-between;align-items:baseline;gap:8px;
     background:none;border:0;border-left:2px solid transparent;
     padding:7px 10px;text-align:left;font-size:13.5px;color:var(--gris);
-    border-radius:0 3px 3px 0;
+    border-radius:0 6px 6px 0;transition:background .15s ease,color .15s ease;
   }
   .rubrique button:hover{background:var(--carte);color:var(--encre)}
   .rubrique button[aria-pressed="true"]{
@@ -66,17 +78,44 @@
     color:var(--encre);font-weight:500;
   }
   .rubrique .n{font-size:11.5px;color:var(--gris);font-variant-numeric:tabular-nums}
-  .bloc-titre{font-size:11.5px;color:var(--gris);padding:0 10px 6px;letter-spacing:.02em}
+  .bloc-titre{font-size:11.5px;color:var(--gris);padding:0 10px 6px;letter-spacing:.04em;text-transform:uppercase}
   .filtres{display:flex;flex-direction:column;gap:6px;padding:0 10px}
   .filtres label{font-size:13px;display:flex;gap:8px;align-items:center;color:var(--encre)}
   .filtres input{accent-color:var(--bleu);width:15px;height:15px}
   .compte{padding:0 10px;font-size:13px;line-height:1.7;color:var(--gris)}
   .compte b{font-family:var(--serif);font-size:17px;color:var(--encre);font-weight:600}
   .lien{background:none;border:0;padding:0 10px;font-size:12.5px;color:var(--gris);text-align:left;text-decoration:underline;text-underline-offset:3px}
-  .lien:hover{color:var(--rouge)}
-  .note{padding:12px 10px 0;border-top:1px solid var(--trait);font-size:12.5px;color:var(--gris);line-height:1.6}
-  .btn.don{display:block;text-align:center;text-decoration:none;color:var(--rouge);border-color:#E2C2BF;margin:0 10px}
+  .lien:hover{color:var(--bleu)}
+  .btn.don{display:block;text-align:center;text-decoration:none;color:var(--rouge);border-color:#E2C2BF;margin:0 10px;border-radius:var(--r)}
   .btn.don:hover{background:var(--rouge-pale)}
+
+  /* ---- mode examen : accent doré, distinct du rouge "erreur" ---- */
+  body.mode-examen{--bleu:var(--or);--bleu-pale:var(--or-pale)}
+  #modes button.mode-examen-btn{
+    background:var(--or-pale);color:var(--or);font-weight:600;
+    border-left-color:#DECA98;
+  }
+  #modes button.mode-examen-btn:hover{background:#EBDDB8}
+  #modes button.mode-examen-btn[aria-pressed="true"]{
+    background:var(--or);color:#fff;border-left-color:var(--or);
+  }
+
+  /* ---- panneau latéral : examen blanc ---- */
+  #panneau-examen{display:flex;flex-direction:column;gap:18px}
+  .palette{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:0 10px}
+  .palette button{
+    aspect-ratio:1;border:1px solid var(--trait);background:var(--carte);border-radius:6px;
+    font-size:12px;color:var(--gris);font-variant-numeric:tabular-nums;padding:0;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  .palette button:hover{border-color:var(--or)}
+  .palette button.repondu{background:var(--or-pale);color:var(--or);border-color:#DECA98;font-weight:600}
+  .palette button.courante{border-color:var(--or);border-width:2px;color:var(--encre)}
+  .legende{display:flex;gap:14px;padding:0 10px;font-size:12px;color:var(--gris)}
+  .legende span{display:inline-flex;align-items:center;gap:5px}
+  .legende i{width:9px;height:9px;border-radius:3px;display:inline-block;border:1px solid var(--trait)}
+  .legende i.rep{background:var(--or-pale);border-color:#DECA98}
+  .quitter{margin:0 10px}
 
   /* ---- fiche ---- */
   .scene{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -85,7 +124,7 @@
   #minuteur{font-variant-numeric:tabular-nums;font-weight:500}
   #minuteur.alerte{color:var(--rouge);font-weight:600}
   .fiche{
-    background:var(--carte);border:1px solid var(--trait);border-radius:4px;
+    background:var(--carte);border:1px solid var(--trait);border-radius:var(--r);box-shadow:var(--ombre);
     padding:34px 36px;min-height:290px;display:flex;flex-direction:column;
   }
   .num{
@@ -113,9 +152,11 @@
   .actions{display:flex;gap:10px;flex-wrap:wrap}
   .btn{
     border:1px solid var(--trait);background:var(--carte);color:var(--encre);
-    padding:11px 18px;border-radius:3px;font-size:14px;font-weight:500;
+    padding:11px 18px;border-radius:8px;font-size:14px;font-weight:500;
+    transition:background .15s ease,border-color .15s ease,transform .1s ease;
   }
   .btn:hover{border-color:var(--gris)}
+  .btn:active{transform:translateY(1px)}
   .btn.principal{background:var(--encre);border-color:var(--encre);color:#fff;flex:1;min-width:190px}
   .btn.principal:hover{background:#20304F}
   .btn.su{color:var(--bleu);border-color:#B9CCE9;flex:1}
@@ -126,22 +167,24 @@
   .nav-g{display:flex;gap:6px}
   .btn.plat{padding:8px 12px;font-size:13px;color:var(--gris);border-color:transparent;background:none}
   .btn.plat:hover{background:var(--carte);border-color:var(--trait)}
+  .btn.plat:disabled{opacity:.4;cursor:default}
+  .btn.plat:disabled:hover{background:none;border-color:transparent}
   .aide{font-size:12.5px;color:var(--gris)}
   kbd{
     font-family:var(--sans);font-size:11.5px;border:1px solid var(--trait);
-    background:var(--carte);border-radius:3px;padding:1px 5px;color:var(--encre);
+    background:var(--carte);border-radius:4px;padding:1px 5px;color:var(--encre);
   }
 
   /* ---- recherche ---- */
   .cherche{position:relative}
   .cherche input{
     width:100%;padding:9px 12px;font-size:13.5px;border:1px solid var(--trait);
-    border-radius:3px;background:var(--carte);color:var(--encre);font-family:var(--sans);
+    border-radius:8px;background:var(--carte);color:var(--encre);font-family:var(--sans);
   }
   .resultats{
     position:absolute;z-index:15;top:calc(100% + 4px);left:0;right:0;max-height:300px;overflow:auto;
-    background:var(--carte);border:1px solid var(--trait);border-radius:3px;
-    box-shadow:0 8px 24px rgba(19,28,51,.10);
+    background:var(--carte);border:1px solid var(--trait);border-radius:8px;
+    box-shadow:var(--ombre);
   }
   .resultats:empty{display:none}
   .resultats button{
@@ -155,8 +198,9 @@
   .propositions{display:flex;flex-direction:column;gap:8px;margin-top:26px}
   .prop{
     display:flex;gap:12px;align-items:baseline;text-align:left;
-    background:var(--carte);border:1px solid var(--trait);border-radius:3px;
+    background:var(--carte);border:1px solid var(--trait);border-radius:8px;
     padding:13px 16px;font-family:var(--serif);font-size:17px;line-height:1.45;color:var(--encre);
+    transition:border-color .15s ease,background .15s ease;
   }
   .prop:hover:not(:disabled){border-color:var(--gris);background:#FAFBFD}
   .prop .lettre{font-family:var(--sans);font-size:12px;color:var(--gris);flex:0 0 12px}
@@ -170,7 +214,25 @@
   .verdict{font-family:var(--sans);font-size:13px;margin-top:20px;font-weight:500}
   .verdict.ok{color:var(--bleu)}
   .verdict.ko{color:var(--rouge)}
+  .verdict.admis{color:var(--vert)}
+  .verdict.recale{color:var(--rouge)}
   .vide{font-family:var(--serif);font-size:19px;color:var(--gris);line-height:1.6;margin:0}
+
+  /* ---- résultat & correction de l'examen ---- */
+  .score-bloc{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .score-chiffre{font-family:var(--serif);font-size:44px;font-weight:600;line-height:1}
+  .score-seuil{font-size:13px;color:var(--gris)}
+  .correction{display:flex;flex-direction:column;gap:14px;margin-top:22px;max-height:60vh;overflow:auto;padding-right:4px}
+  .correction-item{border:1px solid var(--trait);border-radius:8px;padding:14px 16px}
+  .correction-item.ok{border-color:#B9CCE9}
+  .correction-item.ko{border-color:#E2C2BF;background:var(--rouge-pale)}
+  .correction-q{font-family:var(--serif);font-size:15.5px;line-height:1.45;margin:0 0 8px}
+  .correction-rep{font-size:13px;line-height:1.6}
+  .correction-rep .donnee{color:var(--rouge)}
+  .correction-rep .bonne{color:var(--vert)}
+  .correction-tag{font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px;display:block}
+  .correction-item.ok .correction-tag{color:var(--vert)}
+  .correction-item.ko .correction-tag{color:var(--rouge)}
 
   @media (max-width:840px){
     .grille{grid-template-columns:1fr;gap:20px;padding:18px 16px 48px}
@@ -181,12 +243,13 @@
     .reponse{font-size:17px}
     .aide{display:none}
     .btn.principal{min-width:0}
+    .palette{grid-template-columns:repeat(8,1fr)}
   }
 </style>
 
 <header>
   <div class="bandeau">
-    <span class="titre">Examen civique</span>
+    <span class="titre"><span class="liseré"><span></span><span></span><span></span></span>Examen civique</span>
     <span class="sous">Naturalisation française · 508 questions</span>
   </div>
   <div class="jauge"><span id="jauge"></span></div>
@@ -194,22 +257,24 @@
 
 <main class="grille">
   <aside class="rail">
-    <div class="cherche">
-      <input id="q" type="search" placeholder="Chercher une question" autocomplete="off" aria-label="Chercher une question">
-      <div class="resultats" id="res"></div>
-    </div>
-
     <div>
       <div class="bloc-titre">Mode</div>
       <div class="rubrique" id="modes"></div>
     </div>
 
-    <div>
+    <div id="panneau-normal">
+      <div class="cherche">
+        <input id="q" type="search" placeholder="Chercher une question" autocomplete="off" aria-label="Chercher une question">
+        <div class="resultats" id="res"></div>
+      </div>
+    </div>
+
+    <div id="panneau-normal-2">
       <div class="bloc-titre">Rubriques</div>
       <div class="rubrique" id="rubriques"></div>
     </div>
 
-    <div>
+    <div id="panneau-normal-3">
       <div class="bloc-titre">Sélection</div>
       <div class="filtres">
         <label><input type="checkbox" id="f-revoir"> Seulement à revoir</label>
@@ -218,18 +283,26 @@
       </div>
     </div>
 
-    <div>
+    <div id="panneau-normal-4">
       <div class="bloc-titre">Progression</div>
       <p class="compte" id="compte"></p>
       <button class="lien" id="raz">Effacer ma progression</button>
     </div>
 
-    <div>
+    <div id="panneau-normal-5">
       <div class="bloc-titre">Soutenir ce projet</div>
       <a class="btn don" id="don" href="https://fr.tipeee.com/" target="_blank" rel="noopener noreferrer">♥ Faire un don (Tipeee)</a>
     </div>
 
-    <p class="note">À retenir aussi : l'Assemblée nationale compte 577 députés, le Sénat 348 sénateurs.</p>
+    <div id="panneau-examen" hidden>
+      <div class="bloc-titre">Questions</div>
+      <div class="palette" id="palette"></div>
+      <div class="legende">
+        <span><i class="rep"></i> Répondue</span>
+        <span><i></i> En attente</span>
+      </div>
+      <button class="lien quitter" id="quitter-examen">Quitter l'examen blanc</button>
+    </div>
   </aside>
 
   <section class="scene">
@@ -1291,8 +1364,7 @@ let etats = {};          // { numéro: "su" | "revoir" }
 let rubrique = -1;       // -1 = toutes
 let deck = [];
 let pos = 0;
-let ouvert = false;
-let mode = "fiche";       // "fiche" | "qcm" | "examen"
+let mode = "qcm";         // "qcm" | "examen"
 let options = null;       // propositions mélangées de la carte affichée
 let carteRendue = null;   // numéro de la carte pour laquelle options a été tiré
 let choix = null;         // index choisi dans options
@@ -1308,12 +1380,12 @@ const $ = id => document.getElementById(id);
 
 async function charger(){
   try{
-    const r = await window.storage.get(CLE);
-    if(r && r.value) etats = JSON.parse(r.value);
+    const r = localStorage.getItem(CLE);
+    if(r) etats = JSON.parse(r);
   }catch(e){ etats = {}; }
 }
 async function sauver(){
-  try{ await window.storage.set(CLE, JSON.stringify(etats)); }catch(e){}
+  try{ localStorage.setItem(CLE, JSON.stringify(etats)); }catch(e){}
 }
 
 /* ---------- constitution du paquet ---------- */
@@ -1345,23 +1417,38 @@ function dessinerModes(){
   const hote = $("modes");
   hote.innerHTML = "";
   [
-    ["Fiches à retourner","fiche"],
     ["Questions à choix multiples","qcm"],
-    ["Examen blanc (40 questions · 45 min)","examen"]
+    ["★ Examen blanc — 40 questions, 45 min","examen"]
   ].forEach(([t,v])=>{
     const b = document.createElement("button");
     b.innerHTML = '<span>'+t+'</span>';
     b.setAttribute("aria-pressed", v === mode);
+    if(v === "examen") b.classList.add("mode-examen-btn");
     b.onclick = ()=>choisirMode(v);
     hote.appendChild(b);
   });
+  document.body.classList.toggle("mode-examen", mode === "examen");
+  basculerPanneauLateral();
+}
+function basculerPanneauLateral(){
+  const enExamen = mode === "examen";
+  ["panneau-normal","panneau-normal-2","panneau-normal-3","panneau-normal-4","panneau-normal-5"]
+    .forEach(id => { $(id).hidden = enExamen; });
+  $("panneau-examen").hidden = !enExamen;
 }
 function choisirMode(v){
   arreterMinuteur();
-  if(v === "examen"){ demarrerExamen(); return; }
+  if(v === "examen"){
+    mode = "examen";
+    if(!examen){ demarrerExamen(); return; }
+    if(!examen.termine) demarrerMinuteur();
+    dessinerModes();
+    dessiner();
+    return;
+  }
   mode = v; serie = {justes:0,total:0}; reinitCarte(); dessinerModes(); dessiner();
 }
-function reinitCarte(){ ouvert = false; choix = null; options = null; carteRendue = null; }
+function reinitCarte(){ choix = null; options = null; carteRendue = null; }
 
 function dessinerRubriques(){
   const hote = $("rubriques");
@@ -1401,59 +1488,46 @@ function dessiner(){
   const f = FICHES[deck[pos]];
   const e = etats[f.n];
   $("rubrique-en-cours").textContent = RUBRIQUES[f.c] +
-    (mode === "qcm" && serie.total ? "  ·  " + serie.justes + " sur " + serie.total + " justes" : "");
+    (serie.total ? "  ·  " + serie.justes + " sur " + serie.total + " justes" : "");
   $("position").textContent = (pos+1)+" sur "+deck.length;
-  $("aide").innerHTML = mode === "qcm"
-    ? '<kbd>1</kbd>–<kbd>4</kbd> répondre · <kbd>espace</kbd> suivante'
-    : '<kbd>espace</kbd> révéler · <kbd>1</kbd> à revoir · <kbd>2</kbd> je savais';
+  $("aide").innerHTML = '<kbd>1</kbd>–<kbd>4</kbd> répondre · <kbd>espace</kbd> suivante';
 
   const badge = e === "su" ? '<span class="etat su">acquise</span>'
               : e === "revoir" ? '<span class="etat revoir">à revoir</span>' : '<span></span>';
   fiche.innerHTML =
     '<div class="num"><span>Question '+f.n+'</span>'+badge+'</div>'+
-    '<p class="question">'+f.q+'</p>'+
-    (ouvert && mode === "fiche" ? '<div class="reponse apparait">'+f.a+'</div>' : '');
+    '<p class="question">'+f.q+'</p>';
 
   actions.innerHTML = "";
 
-  if(mode === "qcm"){
-    if(carteRendue !== f.n){ options = tirerOptions(f); carteRendue = f.n; choix = null; }
-    const liste = document.createElement("div");
-    liste.className = "propositions";
-    options.forEach((o,i)=>{
-      const b = document.createElement("button");
-      b.className = "prop";
-      b.innerHTML = '<span class="lettre">'+"ABCD"[i]+'</span><span>'+o.t+'</span>';
-      if(choix !== null){
-        b.disabled = true;
-        if(o.juste) b.classList.add("juste");
-        else if(i === choix) b.classList.add("faux");
-      }else{
-        b.onclick = ()=>repondre(i);
-      }
-      liste.appendChild(b);
-    });
-    fiche.appendChild(liste);
+  if(carteRendue !== f.n){ options = tirerOptions(f); carteRendue = f.n; choix = null; }
+  const liste = document.createElement("div");
+  liste.className = "propositions";
+  options.forEach((o,i)=>{
+    const b = document.createElement("button");
+    b.className = "prop";
+    b.innerHTML = '<span class="lettre">'+"ABCD"[i]+'</span><span>'+o.t+'</span>';
     if(choix !== null){
-      const juste = options[choix].juste;
-      const v = document.createElement("p");
-      v.className = "verdict " + (juste ? "ok" : "ko");
-      v.textContent = juste ? "Bonne réponse." : "Réponse incorrecte.";
-      fiche.appendChild(v);
-      const r = document.createElement("div");
-      r.className = "reponse apparait";
-      r.textContent = f.a;
-      fiche.appendChild(r);
-      actions.appendChild(bouton("Question suivante","btn principal",()=>aller(1)));
+      b.disabled = true;
+      if(o.juste) b.classList.add("juste");
+      else if(i === choix) b.classList.add("faux");
+    }else{
+      b.onclick = ()=>repondre(i);
     }
-    return;
-  }
-
-  if(!ouvert){
-    actions.appendChild(bouton("Afficher la réponse","btn principal",()=>{ouvert=true;dessiner();}));
-  }else{
-    actions.appendChild(bouton("À revoir","btn revoir",()=>noter("revoir")));
-    actions.appendChild(bouton("Je savais","btn su",()=>noter("su")));
+    liste.appendChild(b);
+  });
+  fiche.appendChild(liste);
+  if(choix !== null){
+    const juste = options[choix].juste;
+    const v = document.createElement("p");
+    v.className = "verdict " + (juste ? "ok" : "ko");
+    v.textContent = juste ? "Bonne réponse." : "Réponse incorrecte.";
+    fiche.appendChild(v);
+    const r = document.createElement("div");
+    r.className = "reponse apparait";
+    r.textContent = f.a;
+    fiche.appendChild(r);
+    actions.appendChild(bouton("Question suivante","btn principal",()=>aller(1)));
   }
 }
 
@@ -1476,25 +1550,12 @@ function bouton(txt,cls,fn){
   const b=document.createElement("button"); b.className=cls; b.textContent=txt; b.onclick=fn; return b;
 }
 
-function noter(v){
-  if(deck.length===0) return;
-  const f = FICHES[deck[pos]];
-  etats[f.n] = v;
-  sauver();
-  const filtre = $("f-revoir").checked || $("f-neuves").checked;
-  if(filtre){
-    deck.splice(pos,1);
-    if(pos >= deck.length) pos = 0;
-    reinitCarte();
-    dessiner();
-  }else{
-    aller(1);
-  }
-}
 function aller(d){
   if(mode === "examen"){
-    if(!examen || examen.items.length === 0) return;
-    pos = (pos + d + examen.items.length) % examen.items.length;
+    if(!examen || examen.items.length === 0 || examen.termine) return;
+    const np = pos + d;
+    if(np < 0 || np >= examen.items.length) return;
+    pos = np;
     dessiner();
     return;
   }
@@ -1506,6 +1567,7 @@ function aller(d){
 
 /* ---------- examen blanc ---------- */
 function demarrerExamen(){
+  arreterMinuteur();
   const admissibles = FICHES.filter(f => QCM[f.n]);
   const tirage = melanger(admissibles.slice()).slice(0, EXAMEN_N);
   examen = {
@@ -1513,13 +1575,22 @@ function demarrerExamen(){
     restant: EXAMEN_DUREE,
     minuteurId: null,
     termine: false,
-    score: null
+    score: null,
+    afficherCorrection: false
   };
   mode = "examen";
   pos = 0;
   dessinerModes();
   demarrerMinuteur();
   dessiner();
+}
+function quitterExamen(){
+  if(examen && !examen.termine){
+    if(!confirm("Quitter maintenant abandonnera cet examen en cours. Continuer ?")) return;
+  }
+  arreterMinuteur();
+  examen = null;
+  choisirMode("qcm");
 }
 function demarrerMinuteur(){
   arreterMinuteur();
@@ -1552,13 +1623,15 @@ function dessinerExamen(){
 
   const fiche = $("fiche"), actions = $("actions");
   const it = examen.items[pos];
+  const repondues = examen.items.filter(x=>x.choix!==null).length;
 
-  $("rubrique-en-cours").textContent = "Examen blanc";
+  $("rubrique-en-cours").textContent = "Examen blanc · "+repondues+"/"+examen.items.length+" répondues";
   $("position").textContent = (pos+1)+" sur "+examen.items.length;
   $("minuteur").textContent = formatTemps(examen.restant);
   $("minuteur").classList.toggle("alerte", examen.restant <= 60);
   $("aide").innerHTML = '<kbd>1</kbd>–<kbd>4</kbd> répondre · <kbd>←</kbd><kbd>→</kbd> naviguer';
-  $("prec").disabled = $("suiv").disabled = false;
+  $("prec").disabled = pos === 0;
+  $("suiv").disabled = pos === examen.items.length - 1;
 
   fiche.innerHTML =
     '<div class="num"><span>Question '+(pos+1)+' / '+examen.items.length+'</span></div>'+
@@ -1576,7 +1649,34 @@ function dessinerExamen(){
   fiche.appendChild(liste);
 
   actions.innerHTML = "";
-  actions.appendChild(bouton("Terminer l'examen","btn principal",()=>terminerExamen()));
+  if(pos < examen.items.length - 1){
+    actions.appendChild(bouton("Question suivante","btn principal",()=>aller(1)));
+  }else{
+    actions.appendChild(bouton("Terminer l'examen","btn principal",()=>{
+      const restantes = examen.items.length - repondues;
+      if(restantes > 0 && !confirm(restantes+" question(s) sans réponse compteront comme fausses. Terminer l'examen ?")) return;
+      terminerExamen();
+    }));
+  }
+  dessinerPaletteExamen();
+}
+function dessinerPaletteExamen(){
+  const hote = $("palette");
+  if(!hote) return;
+  hote.innerHTML = "";
+  if(!examen) return;
+  examen.items.forEach((it,i)=>{
+    const b = document.createElement("button");
+    b.textContent = i+1;
+    let cls = "";
+    if(it.choix !== null) cls += "repondu ";
+    if(i === pos && !examen.termine) cls += "courante";
+    b.className = cls.trim();
+    b.disabled = examen.termine;
+    b.setAttribute("aria-label","Aller à la question "+(i+1));
+    b.onclick = ()=>{ pos = i; dessiner(); };
+    hote.appendChild(b);
+  });
 }
 function dessinerResultatExamen(){
   const fiche = $("fiche"), actions = $("actions");
@@ -1589,19 +1689,43 @@ function dessinerResultatExamen(){
   $("minuteur").textContent = "";
   $("aide").innerHTML = "";
   $("prec").disabled = $("suiv").disabled = true;
+  dessinerPaletteExamen();
 
   fiche.innerHTML =
     '<div class="num"><span>Résultat de l\'examen blanc</span></div>'+
-    '<p class="question">'+score+' / '+total+' bonnes réponses</p>'+
-    '<div class="reponse apparait"><strong class="verdict '+(reussi ? "ok" : "ko")+'">'+
-      (reussi
-        ? "Admis — le seuil de "+EXAMEN_SEUIL+"/"+total+" est atteint."
-        : "Non admis — il fallait au moins "+EXAMEN_SEUIL+"/"+total+" bonnes réponses.") +
-    '</strong></div>';
+    '<div class="score-bloc">'+
+      '<span class="score-chiffre">'+score+' / '+total+'</span>'+
+      '<strong class="verdict '+(reussi ? "admis" : "recale")+'">'+(reussi ? "Admis" : "Non admis")+'</strong>'+
+    '</div>'+
+    '<p class="score-seuil">Seuil de réussite : '+EXAMEN_SEUIL+'/'+total+' bonnes réponses.</p>';
+
+  if(examen.afficherCorrection){
+    const liste = document.createElement("div");
+    liste.className = "correction apparait";
+    examen.items.forEach((it,i)=>{
+      const juste = it.choix !== null && it.options[it.choix].juste;
+      const bonne = it.options.find(o=>o.juste).t;
+      const div = document.createElement("div");
+      div.className = "correction-item " + (juste ? "ok" : "ko");
+      div.innerHTML =
+        '<span class="correction-tag">Question '+(i+1)+' · '+(juste ? "Bonne réponse" : "Réponse incorrecte")+'</span>'+
+        '<p class="correction-q">'+it.f.q+'</p>'+
+        '<p class="correction-rep">Votre réponse : <span class="'+(juste ? "bonne" : "donnee")+'">'+
+          (it.choix !== null ? it.options[it.choix].t : "Non répondu")+'</span>'+
+          (juste ? "" : '<br>Bonne réponse : <span class="bonne">'+bonne+'</span>')+
+        '</p>';
+      liste.appendChild(div);
+    });
+    fiche.appendChild(liste);
+  }
 
   actions.innerHTML = "";
+  actions.appendChild(bouton(examen.afficherCorrection ? "Masquer la correction" : "Voir la correction","btn su",()=>{
+    examen.afficherCorrection = !examen.afficherCorrection;
+    dessiner();
+  }));
   actions.appendChild(bouton("Repasser un examen blanc","btn principal",()=>demarrerExamen()));
-  actions.appendChild(bouton("Revenir aux fiches","btn plat",()=>choisirMode("fiche")));
+  actions.appendChild(bouton("Revenir au questionnaire","btn plat",()=>choisirMode("qcm")));
 }
 
 /* ---------- recherche ---------- */
@@ -1624,7 +1748,7 @@ function chercher(){
             reinitCarte();
             construire(false);
             const i = deck.findIndex(k => FICHES[k].n === f.n);
-            if(i>=0){ pos = i; ouvert = true; dessiner(); }
+            if(i>=0){ pos = i; dessiner(); }
             $("q").value=""; res.innerHTML="";
           };
           res.appendChild(b);
@@ -1640,6 +1764,7 @@ $("q").onblur = ()=> setTimeout(()=>{$("res").innerHTML="";}, 180);
 $("raz").onclick = ()=>{
   etats = {}; sauver(); construire(true);
 };
+$("quitter-examen").onclick = ()=>quitterExamen();
 
 document.addEventListener("keydown", ev=>{
   if(ev.target.tagName === "INPUT") return;
@@ -1657,9 +1782,6 @@ document.addEventListener("keydown", ev=>{
     }
     return;
   }
-  if(ev.key === " " || ev.key === "Enter"){ ev.preventDefault(); if(!ouvert){ouvert=true;dessiner();} }
-  else if(ev.key === "1" && ouvert) noter("revoir");
-  else if(ev.key === "2" && ouvert) noter("su");
 });
 
 /* ---------- démarrage ---------- */
