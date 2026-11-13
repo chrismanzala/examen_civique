@@ -75,11 +75,15 @@
   .lien{background:none;border:0;padding:0 10px;font-size:12.5px;color:var(--gris);text-align:left;text-decoration:underline;text-underline-offset:3px}
   .lien:hover{color:var(--rouge)}
   .note{padding:12px 10px 0;border-top:1px solid var(--trait);font-size:12.5px;color:var(--gris);line-height:1.6}
+  .btn.don{display:block;text-align:center;text-decoration:none;color:var(--rouge);border-color:#E2C2BF;margin:0 10px}
+  .btn.don:hover{background:var(--rouge-pale)}
 
   /* ---- fiche ---- */
   .scene{display:flex;flex-direction:column;gap:16px;min-width:0}
   .reperes{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--gris)}
   .reperes .pos{font-variant-numeric:tabular-nums}
+  #minuteur{font-variant-numeric:tabular-nums;font-weight:500}
+  #minuteur.alerte{color:var(--rouge);font-weight:600}
   .fiche{
     background:var(--carte);border:1px solid var(--trait);border-radius:4px;
     padding:34px 36px;min-height:290px;display:flex;flex-direction:column;
@@ -161,6 +165,8 @@
   .prop.juste .lettre{color:var(--bleu)}
   .prop.faux{border-color:#E2C2BF;background:var(--rouge-pale);color:var(--rouge)}
   .prop.faux .lettre{color:var(--rouge)}
+  .prop.choisi{border-color:var(--bleu);background:var(--bleu-pale)}
+  .prop.choisi .lettre{color:var(--bleu)}
   .verdict{font-family:var(--sans);font-size:13px;margin-top:20px;font-weight:500}
   .verdict.ok{color:var(--bleu)}
   .verdict.ko{color:var(--rouge)}
@@ -218,12 +224,18 @@
       <button class="lien" id="raz">Effacer ma progression</button>
     </div>
 
+    <div>
+      <div class="bloc-titre">Soutenir ce projet</div>
+      <a class="btn don" id="don" href="https://fr.tipeee.com/" target="_blank" rel="noopener noreferrer">♥ Faire un don (Tipeee)</a>
+    </div>
+
     <p class="note">À retenir aussi : l'Assemblée nationale compte 577 députés, le Sénat 348 sénateurs.</p>
   </aside>
 
   <section class="scene">
     <div class="reperes">
       <span id="rubrique-en-cours"></span>
+      <span id="minuteur"></span>
       <span class="pos" id="position"></span>
     </div>
 
@@ -1280,11 +1292,17 @@ let rubrique = -1;       // -1 = toutes
 let deck = [];
 let pos = 0;
 let ouvert = false;
-let mode = "fiche";       // "fiche" | "qcm"
+let mode = "fiche";       // "fiche" | "qcm" | "examen"
 let options = null;       // propositions mélangées de la carte affichée
 let carteRendue = null;   // numéro de la carte pour laquelle options a été tiré
 let choix = null;         // index choisi dans options
 let serie = {justes:0, total:0};
+
+/* ---------- examen blanc ---------- */
+const EXAMEN_N = 40;
+const EXAMEN_DUREE = 45*60; // secondes
+const EXAMEN_SEUIL = 32;
+let examen = null; // {items:[{f,options,choix}], restant, minuteurId, termine, score}
 
 const $ = id => document.getElementById(id);
 
@@ -1326,13 +1344,22 @@ function construire(garder){
 function dessinerModes(){
   const hote = $("modes");
   hote.innerHTML = "";
-  [["Fiches à retourner","fiche"],["Questions à choix multiples","qcm"]].forEach(([t,v])=>{
+  [
+    ["Fiches à retourner","fiche"],
+    ["Questions à choix multiples","qcm"],
+    ["Examen blanc (40 questions · 45 min)","examen"]
+  ].forEach(([t,v])=>{
     const b = document.createElement("button");
     b.innerHTML = '<span>'+t+'</span>';
     b.setAttribute("aria-pressed", v === mode);
-    b.onclick = ()=>{ mode = v; serie = {justes:0,total:0}; reinitCarte(); dessinerModes(); dessiner(); };
+    b.onclick = ()=>choisirMode(v);
     hote.appendChild(b);
   });
+}
+function choisirMode(v){
+  arreterMinuteur();
+  if(v === "examen"){ demarrerExamen(); return; }
+  mode = v; serie = {justes:0,total:0}; reinitCarte(); dessinerModes(); dessiner();
 }
 function reinitCarte(){ ouvert = false; choix = null; options = null; carteRendue = null; }
 
@@ -1358,6 +1385,8 @@ function dessiner(){
 
   $("jauge").style.width = (acquis/total*100)+"%";
   $("compte").innerHTML = "<b>"+acquis+"</b> / "+total+" acquises<br>"+aRevoir+" à revoir · "+(total-acquis-aRevoir)+" jamais vues";
+
+  if(mode === "examen"){ dessinerExamen(); return; }
 
   if(deck.length === 0){
     $("rubrique-en-cours").textContent = "";
@@ -1463,10 +1492,116 @@ function noter(v){
   }
 }
 function aller(d){
+  if(mode === "examen"){
+    if(!examen || examen.items.length === 0) return;
+    pos = (pos + d + examen.items.length) % examen.items.length;
+    dessiner();
+    return;
+  }
   if(deck.length===0) return;
   pos = (pos + d + deck.length) % deck.length;
   reinitCarte();
   dessiner();
+}
+
+/* ---------- examen blanc ---------- */
+function demarrerExamen(){
+  const admissibles = FICHES.filter(f => QCM[f.n]);
+  const tirage = melanger(admissibles.slice()).slice(0, EXAMEN_N);
+  examen = {
+    items: tirage.map(f => ({ f, options: tirerOptions(f), choix: null })),
+    restant: EXAMEN_DUREE,
+    minuteurId: null,
+    termine: false,
+    score: null
+  };
+  mode = "examen";
+  pos = 0;
+  dessinerModes();
+  demarrerMinuteur();
+  dessiner();
+}
+function demarrerMinuteur(){
+  arreterMinuteur();
+  examen.minuteurId = setInterval(()=>{
+    examen.restant--;
+    if(examen.restant <= 0){ examen.restant = 0; terminerExamen(); return; }
+    if(mode === "examen" && !examen.termine){
+      $("minuteur").textContent = formatTemps(examen.restant);
+      $("minuteur").classList.toggle("alerte", examen.restant <= 60);
+    }
+  }, 1000);
+}
+function arreterMinuteur(){
+  if(examen && examen.minuteurId){ clearInterval(examen.minuteurId); examen.minuteurId = null; }
+}
+function formatTemps(s){
+  const m = Math.floor(s/60), sec = s%60;
+  return m+":"+String(sec).padStart(2,"0");
+}
+function terminerExamen(){
+  if(!examen || examen.termine) return;
+  arreterMinuteur();
+  examen.termine = true;
+  examen.score = examen.items.filter(it => it.choix !== null && it.options[it.choix].juste).length;
+  dessiner();
+}
+function dessinerExamen(){
+  if(!examen){ demarrerExamen(); return; }
+  if(examen.termine){ dessinerResultatExamen(); return; }
+
+  const fiche = $("fiche"), actions = $("actions");
+  const it = examen.items[pos];
+
+  $("rubrique-en-cours").textContent = "Examen blanc";
+  $("position").textContent = (pos+1)+" sur "+examen.items.length;
+  $("minuteur").textContent = formatTemps(examen.restant);
+  $("minuteur").classList.toggle("alerte", examen.restant <= 60);
+  $("aide").innerHTML = '<kbd>1</kbd>–<kbd>4</kbd> répondre · <kbd>←</kbd><kbd>→</kbd> naviguer';
+  $("prec").disabled = $("suiv").disabled = false;
+
+  fiche.innerHTML =
+    '<div class="num"><span>Question '+(pos+1)+' / '+examen.items.length+'</span></div>'+
+    '<p class="question">'+it.f.q+'</p>';
+
+  const liste = document.createElement("div");
+  liste.className = "propositions";
+  it.options.forEach((o,i)=>{
+    const b = document.createElement("button");
+    b.className = "prop" + (it.choix === i ? " choisi" : "");
+    b.innerHTML = '<span class="lettre">'+"ABCD"[i]+'</span><span>'+o.t+'</span>';
+    b.onclick = ()=>{ it.choix = i; dessiner(); };
+    liste.appendChild(b);
+  });
+  fiche.appendChild(liste);
+
+  actions.innerHTML = "";
+  actions.appendChild(bouton("Terminer l'examen","btn principal",()=>terminerExamen()));
+}
+function dessinerResultatExamen(){
+  const fiche = $("fiche"), actions = $("actions");
+  const total = examen.items.length;
+  const score = examen.score;
+  const reussi = score >= EXAMEN_SEUIL;
+
+  $("rubrique-en-cours").textContent = "Examen blanc · résultat";
+  $("position").textContent = "";
+  $("minuteur").textContent = "";
+  $("aide").innerHTML = "";
+  $("prec").disabled = $("suiv").disabled = true;
+
+  fiche.innerHTML =
+    '<div class="num"><span>Résultat de l\'examen blanc</span></div>'+
+    '<p class="question">'+score+' / '+total+' bonnes réponses</p>'+
+    '<div class="reponse apparait"><strong class="verdict '+(reussi ? "ok" : "ko")+'">'+
+      (reussi
+        ? "Admis — le seuil de "+EXAMEN_SEUIL+"/"+total+" est atteint."
+        : "Non admis — il fallait au moins "+EXAMEN_SEUIL+"/"+total+" bonnes réponses.") +
+    '</strong></div>';
+
+  actions.innerHTML = "";
+  actions.appendChild(bouton("Repasser un examen blanc","btn principal",()=>demarrerExamen()));
+  actions.appendChild(bouton("Revenir aux fiches","btn plat",()=>choisirMode("fiche")));
 }
 
 /* ---------- recherche ---------- */
@@ -1513,6 +1648,13 @@ document.addEventListener("keydown", ev=>{
   if(mode === "qcm"){
     if("1234".includes(ev.key) && choix === null && options) repondre(Number(ev.key)-1);
     else if((ev.key === " " || ev.key === "Enter") && choix !== null){ ev.preventDefault(); aller(1); }
+    return;
+  }
+  if(mode === "examen"){
+    if(examen && !examen.termine && "1234".includes(ev.key)){
+      examen.items[pos].choix = Number(ev.key)-1;
+      dessiner();
+    }
     return;
   }
   if(ev.key === " " || ev.key === "Enter"){ ev.preventDefault(); if(!ouvert){ouvert=true;dessiner();} }
